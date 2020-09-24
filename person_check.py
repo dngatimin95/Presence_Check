@@ -1,67 +1,65 @@
+# Modified version of an example on facial recognition by ageitgey
+
 import face_recognition
 import cv2
-import numpy as np
 import os
-import glob
+import numpy as np
 
 capture = cv2.VideoCapture(0)
-known_face_encodings = []
-known_face_names = []
-charImages = "C:\\Users\\Darren\\Documents\\GitHub\\Presence_Check\\charImages"
+train_face_encodings = []
+train_face_names = []
+char_image_file = "****" # Insert file path to where you kept people's faces
 
-for faces in os.listdir(charImages):
-    char_image = face_recognition.load_image_file(os.path.join(charImages,faces))
+for faces in os.listdir(char_image_file):
+    char_image = face_recognition.load_image_file(os.path.join(char_image_file,faces))
     char_face_encoding = face_recognition.face_encodings(char_image)[0]
 
-    known_face_encodings.append(char_face_encoding)
-    known_face_names.append(os.path.splitext(faces)[0])
+    train_face_encodings.append(char_face_encoding)
+    train_face_names.append(os.path.splitext(faces)[0])
 
-face_locations = []
-face_encodings = []
-face_names = []
+face_locations, face_encodings, face_names = [], [], []
+scan_frame = True
 present = set()
-process_this_frame = True
 
 while True:
-    ret, frame = capture.read()
+    __, frame = capture.read()
     frame = cv2.flip(frame, 1)
-    small_frame = cv2.resize(frame, (0, 0), fx=0.25, fy=0.25)
-    rgb_small_frame = small_frame[:, :, ::-1]
+    min_frame = cv2.resize(frame, (0, 0), fx=0.2, fy=0.2)
+    rgb_frame = cv2.cvtColor(min_frame, cv2.COLOR_BGR2RGB)
 
-    if process_this_frame:
-        face_locations = face_recognition.face_locations(rgb_small_frame)
-        face_encodings = face_recognition.face_encodings(rgb_small_frame, face_locations)
+    if scan_frame:
+        face_locations = face_recognition.face_locations(rgb_frame)
+        face_encodings = face_recognition.face_encodings(rgb_frame, face_locations)
 
         face_names = []
         for face_encoding in face_encodings:
-            matches = face_recognition.compare_faces(known_face_encodings, face_encoding)
+            same = face_recognition.compare_faces(train_face_encodings, face_encoding)
             name = "Unknown"
 
-            face_distances = face_recognition.face_distance(known_face_encodings, face_encoding)
-            best_match_index = np.argmin(face_distances)
-            if matches[best_match_index]:
-                name = known_face_names[best_match_index]
-
+            dist = face_recognition.face_distance(train_face_encodings, face_encoding)
+            best_match = np.argmin(dist)
+            if same[best_match]:
+                name = train_face_names[best_match]
             face_names.append(name)
 
-    process_this_frame = not process_this_frame
+    scan_frame = not scan_frame
 
     for (top, right, bottom, left), name in zip(face_locations, face_names):
-        top *= 4
-        right *= 4
-        bottom *= 4
-        left *= 4
+        top *= 5
+        right *= 5
+        bottom *= 5
+        left *= 5
 
-        cv2.rectangle(frame, (left, top), (right, bottom), (0, 0, 255), 2)
-        cv2.rectangle(frame, (left, bottom - 35), (right, bottom), (0, 0, 255), cv2.FILLED)
-        font = cv2.FONT_HERSHEY_DUPLEX
-        cv2.putText(frame, name, (left + 6, bottom - 6), font, 1.0, (255, 255, 255), 1)
+        cv2.rectangle(frame, (left, top), (right, bottom), (0, 69, 255), 2)
+        cv2.rectangle(frame, (left, bottom - 35), (right, bottom), (0, 69, 255), cv2.FILLED)
+        font = cv2.FONT_HERSHEY_COMPLEX
+        cv2.putText(frame, name, (left + 6, bottom - 6), font, 1.0, (0, 0, 0), 1)
         present.add(name)
 
-    cv2.imshow('Video', frame)
+    cv2.imshow('Presence Check', frame)
 
-    # Hit 'q' on the keyboard to quit!
-    if cv2.waitKey(1) & 0xFF == ord('q'):
+    esc = cv2.waitKey(10) & 0xff
+    if esc == 27:
         break
 
 capture.release()
@@ -69,6 +67,5 @@ cv2.destroyAllWindows()
 
 if "Unknown" in present:
     present.remove("Unknown")
-print("These people were detected: ")
-for i in present:
-    print(i)
+print("These people were detected in the frame: ")
+print(i for i in present)
