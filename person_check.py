@@ -8,7 +8,7 @@ import numpy as np
 capture = cv2.VideoCapture(0)
 train_face_encodings = []
 train_face_names = []
-char_image_file = "****" # Insert file path to where you kept people's faces
+char_image_file = "C:\\Users\\Darren\\Documents\\GitHub\\Presence_Check\\charImages" # Insert file path to where you kept people's faces
 
 for faces in os.listdir(char_image_file):
     char_image = face_recognition.load_image_file(os.path.join(char_image_file,faces))
