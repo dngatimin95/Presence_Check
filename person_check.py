@@ -67,5 +67,9 @@ cv2.destroyAllWindows()
 
 if "Unknown" in present:
     present.remove("Unknown")
-print("These people were detected in the frame: ")
-print(i for i in present)
+
+if len(present) > 0:
+    print(str(len(present)) + " people were detected in the frame. They are: ")
+    print(i for i in present)
+else:
+    print("No one was detected.")
